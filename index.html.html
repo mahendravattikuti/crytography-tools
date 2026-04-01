@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cryptography Tools</title>
+<style>
+/* ═══════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   PAGE VISIBILITY
+═══════════════════════════════════════════ */
+.page { display: none; min-height: 100vh; }
+.page.active { display: flex; justify-content: center; align-items: flex-start; padding: 20px; }
+
+/* ═══════════════════════════════════════════
+   MAIN MENU
+═══════════════════════════════════════════ */
+#menu {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  align-items: center;
+}
+
+.menu-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 24px;
+  padding: 50px 44px 44px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+}
+
+.menu-icon { font-size: 3.2rem; margin-bottom: 14px; display: block; }
+
+.menu-card h1 {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.menu-card .tagline {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.95rem;
+  margin-bottom: 40px;
+}
+
+.menu-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 24px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+  width: 100%;
+  letter-spacing: 0.2px;
+}
+
+.tool-btn:hover { transform: translateY(-3px); }
+.tool-btn:active { transform: scale(0.98); }
+
+.tool-btn .btn-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.tool-btn .btn-text { flex: 1; }
+.tool-btn .btn-title { display: block; font-size: 1.05rem; font-weight: 700; }
+.tool-btn .btn-desc  { display: block; font-size: 0.78rem; opacity: 0.8; margin-top: 2px; font-weight: 400; }
+.tool-btn .btn-arrow { font-size: 1.2rem; opacity: 0.7; }
+
+.tool-btn.caesar {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(102,126,234,0.4);
+}
+.tool-btn.caesar .btn-icon { background: rgba(255,255,255,0.2); }
+
+.tool-btn.mitm {
+  background: linear-gradient(135deg, #f093fb, #f5576c);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(245,87,108,0.35);
+}
+.tool-btn.mitm .btn-icon { background: rgba(255,255,255,0.2); }
+
+.tool-btn.rail {
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(42,82,152,0.4);
+}
+.tool-btn.rail .btn-icon { background: rgba(255,255,255,0.2); }
+
+.menu-footer {
+  margin-top: 30px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ═══════════════════════════════════════════
+   SHARED TOOL STYLES
+═══════════════════════════════════════════ */
+.tool-container {
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  padding: 36px 40px 40px;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  margin-bottom: 22px;
+  transition: background 0.2s, color 0.2s;
+  letter-spacing: 0.2px;
+}
+.back-btn:hover { background: #e2e8f0; color: #1e293b; }
+
+.tool-title { text-align: center; margin-bottom: 8px; font-size: 2.2em; }
+.tool-subtitle { text-align: center; color: #666; margin-bottom: 28px; font-size: 0.93em; }
+
+.form-group { margin-bottom: 18px; }
+.form-group label {
+  display: block; margin-bottom: 7px; color: #333;
+  font-weight: 600; font-size: 0.95em;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.tool-container input[type="number"] {
+  width: 100%; padding: 11px 13px;
+  border: 2px solid #e0e0e0; border-radius: 8px;
+  font-size: 1em; transition: border-color 0.3s;
+  background: #fafafa;
+}
+.form-group input:focus,
+.tool-container input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.button-group {
+  display: flex; gap: 12px; margin-top: 26px;
+  flex-wrap: wrap;
+}
+.button-group button {
+  flex: 1; min-width: 100px;
+  padding: 11px 16px; font-size: 0.97em; font-weight: 600;
+  border: none; border-radius: 8px; cursor: pointer;
+  transition: all 0.25s; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.button-group button:hover { transform: translateY(-2px); }
+.button-group button:active { transform: scale(0.98); }
+
+.clear-btn { background: #e0e0e0 !important; color: #333 !important; box-shadow: none !important; }
+.clear-btn:hover { background: #d0d0d0 !important; transform: none !important; }
+
+.result-section { margin-top: 26px; padding-top: 26px; border-top: 2px solid #e0e0e0; }
+
+.result-box {
+  background: #f8f9fa; padding: 15px; border-radius: 8px;
+  margin-bottom: 18px; display: none;
+}
+.result-box.show { display: block; animation: slideIn 0.3s ease; }
+
+.error-box {
+  background: #fee2e2; border-left: 4px solid #f87171;
+  color: #b91c1c; padding: 12px 15px; border-radius: 8px;
+  margin-bottom: 14px; display: none; font-weight: 500; font-size: 0.9em;
+}
+.error-box.show { display: block; animation: slideIn 0.3s ease; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.result-label {
+  color: #666; font-weight: 600; margin-bottom: 7px;
+  font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.result-text {
+  color: #333; font-size: 1.08em; word-break: break-all;
+  font-weight: 600;
+}
+
+.info-section {
+  border-radius: 8px; padding: 15px; margin-top: 26px;
+  font-size: 0.88em; color: #333;
+}
+.info-section h3 { margin-bottom: 8px; font-size: 0.97em; }
+.info-section p  { margin-bottom: 7px; line-height: 1.55; }
+.example-block {
+  background: #f5f5f5; padding: 10px 13px; border-radius: 6px;
+  font-family: 'Courier New', monospace; margin-top: 8px; font-size: 0.85em;
+}
+
+/* ═══════════════════════════════════════════
+   CAESAR CIPHER
+═══════════════════════════════════════════ */
+#caesar { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+#caesar .tool-title   { color: #333; }
+#caesar .form-group input:focus { border-color: #667eea; }
+#caesar .result-box   { border-left: 4px solid #667eea; }
+#caesar .encrypt-btn  { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; box-shadow: 0 4px 16px rgba(102,126,234,0.35); }
+#caesar .decrypt-btn  { background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff; box-shadow: 0 4px 16px rgba(245,87,108,0.3); }
+#caesar .info-section { background: #f0f7ff; border: 1px solid #d0e8ff; }
+#caesar .info-section h3 { color: #667eea; }
+
+.steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 9px; margin-top: 10px; }
+.step-card  {
+  background: white; padding: 9px; border-radius: 6px;
+  border-left: 3px solid #667eea; font-size: 0.83em; color: #333;
+}
+.step-card .s-orig  { color: #666; font-weight: 500; }
+.step-card .s-arrow { color: #667eea; font-weight: bold; }
+.step-card .s-enc   { color: #764ba2; font-weight: 600; }
+.steps-section { background: #f0f4ff; border: 1px solid #d0deff; border-radius: 8px; padding: 14px; margin-top: 12px; }
+.steps-section h3 { color: #667eea; font-size: 0.9em; margin-bottom: 9px; }
+
+/* ═══════════════════════════════════════════
+   MITM / DH ATTACK
+═══════════════════════════════════════════ */
+#mitm { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+#mitm .tool-title   { color: #333; }
+#mitm .tool-container { max-width: 720px; }
+
+/* MITM inputs (not in form-group) */
+#mitm .mitm-field { margin-bottom: 14px; }
+#mitm .mitm-field label {
+  display: block; margin-bottom: 6px; color: #333; font-weight: 600; font-size: 0.93em;
+}
+#mitm .mitm-field input {
+  width: 100%; padding: 10px 13px; border: 2px solid #e0e0e0;
+  border-radius: 8px; font-size: 1em; background: #fafafa; outline: none;
+  transition: border-color 0.2s;
+}
+#mitm .mitm-field input:focus { border-color: #f5576c; box-shadow: 0 0 0 3px rgba(245,87,108,0.1); }
+
+#mitm .simulate-btn {
+  width: 100%; padding: 13px; border: none; border-radius: 9px;
+  background: linear-gradient(135deg, #f093fb, #f5576c); color: #fff;
+  font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 6px;
+  letter-spacing: 0.3px; transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 5px 20px rgba(245,87,108,0.35);
+}
+#mitm .simulate-btn:hover  { opacity: 0.9; }
+#mitm .simulate-btn:active { transform: scale(0.99); }
+
+/* Actor strip */
+.actor-strip { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-top: 22px; border-radius: 10px; overflow: hidden; border: 1.5px solid #e2e8f0; }
+.actor-cell {
+  padding: 14px 8px; text-align: center;
+  font-size: 0.95rem; font-weight: 700;
+  border-right: 1.5px solid #e2e8f0;
+}
+.actor-cell:last-child { border-right: none; }
+.actor-cell.ac-alice { background: #e6f7ec; color: #16a34a; }
+.actor-cell.ac-eve   { background: #fdecea; color: #dc2626; }
+.actor-cell.ac-bob   { background: #eaf2ff; color: #2563eb; }
+.actor-flow { text-align: center; font-weight: 700; font-size: 0.85rem; color: #475569; margin-top: 10px; }
+
+/* MITM output */
+.mitm-output {
+  background: #f8fafc; border-radius: 10px; padding: 18px 20px;
+  margin-top: 16px; border: 1px solid #e2e8f0; display: none;
+  animation: slideIn 0.35s ease;
+}
+.mitm-output.show { display: block; }
+
+.mitm-row { padding: 7px 0; border-bottom: 1px solid #f0f2f5; }
+.mitm-row:last-child { border-bottom: none; }
+.mitm-row .mr-main { font-size: 0.9rem; font-weight: 700; color: #1e293b; }
+.mitm-row .mr-main span { font-weight: 400; }
+.mitm-row .mr-sub  { font-family: 'Courier New', monospace; font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+.mitm-row.danger .mr-main { color: #dc2626; }
+.mitm-row.danger .mr-sub  { color: #ef4444; }
+
+.mitm-sec {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.9px; color: #94a3b8; margin: 14px 0 7px;
+  padding-bottom: 4px; border-bottom: 1px dashed #e2e8f0;
+}
+.mitm-sec.red { color: #dc2626; border-bottom-color: #fca5a5; }
+
+.mitm-key-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.mkc {
+  border-radius: 9px; padding: 12px 14px; border: 1.5px solid;
+}
+.mkc.kc-alice { background: #f0fdf4; border-color: #86efac; }
+.mkc.kc-bob   { background: #fef2f2; border-color: #fca5a5; }
+.mkc .mkc-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+.mkc.kc-alice .mkc-title { color: #16a34a; }
+.mkc.kc-bob   .mkc-title { color: #dc2626; }
+.mkc .mkc-val { font-family: 'Courier New', monospace; font-size: 0.88rem; font-weight: 700; color: #1e293b; }
+.mkc .mkc-sub { font-family: 'Courier New', monospace; font-size: 0.7rem; color: #64748b; margin-top: 3px; }
+
+.mitm-alert {
+  margin-top: 16px; background: #fef3c7; border: 1.5px solid #f59e0b;
+  border-radius: 9px; padding: 11px 15px; font-size: 0.82rem;
+  color: #92400e; font-weight: 600; text-align: center;
+}
+
+/* ═══════════════════════════════════════════
+   RAIL FENCE CIPHER
+═══════════════════════════════════════════ */
+#rail { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); }
+#rail .tool-title   { color: #1e3c72; }
+#rail .form-group input:focus { border-color: #2a5298; }
+#rail .result-box   { border-left: 4px solid #2a5298; }
+#rail .encrypt-btn  { background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff; box-shadow: 0 4px 16px rgba(42,82,152,0.35); }
+#rail .decrypt-btn  { background: linear-gradient(135deg, #00b4db, #0083b0); color: #fff; box-shadow: 0 4px 16px rgba(0,131,176,0.3); }
+#rail .info-section { background: #f0f7ff; border: 1px solid #d0e8ff; }
+#rail .info-section h3 { color: #2a5298; }
+
+.visualization-box {
+  background: #f0f7ff; border: 2px solid #d0e8ff; border-radius: 8px;
+  padding: 14px; margin-top: 14px; max-height: 280px; overflow-y: auto;
+}
+.visualization-box h3 { color: #2a5298; margin-bottom: 10px; font-size: 0.9em; }
+.rail-pattern {
+  font-family: 'Courier New', monospace; background: white; padding: 12px;
+  border-radius: 5px; border: 1px solid #d0e8ff; font-size: 0.85em;
+  line-height: 1.9; color: #333; white-space: pre-wrap; word-wrap: break-word;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .tool-container { padding: 24px 20px; }
+  .menu-card { padding: 36px 24px 32px; }
+  .menu-card h1 { font-size: 1.9rem; }
+  .button-group { flex-direction: column; }
+  .steps-grid { grid-template-columns: 1fr; }
+  .mitm-key-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     MAIN MENU
+═══════════════════════════════════════════ -->
+<div id="menu" class="page active">
+  <div class="menu-card">
+    <span class="menu-icon">🛡️</span>
+    <h1>Cryptography Tools</h1>
+    <p class="tagline">Select a tool to explore classical cryptographic techniques</p>
+
+    <div class="menu-tools">
+      <button class="tool-btn caesar" onclick="showPage('caesar')">
+        <div class="btn-icon">🔐</div>
+        <div class="btn-text">
+          <span class="btn-title">Caesar Cipher</span>
+          <span class="btn-desc">Shift-based letter substitution cipher</span>
+        </div>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <button class="tool-btn mitm" onclick="showPage('mitm')">
+        <div class="btn-icon">🕵️</div>
+        <div class="btn-text">
+          <span class="btn-title">MITM Attack</span>
+          <span class="btn-desc">Diffie-Hellman man-in-the-middle simulation</span>
+        </div>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <button class="tool-btn rail" onclick="showPage('rail')">
+        <div class="btn-icon">🚂</div>
+        <div class="btn-text">
+          <span class="btn-title">Rail Fence Cipher</span>
+          <span class="btn-desc">Zigzag transposition cipher with rails</span>
+        </div>
+        <span class="btn-arrow">→</span>
+      </button>
+    </div>
+
+    <p class="menu-footer">Classical cryptography demonstration suite</p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CAESAR CIPHER
+═══════════════════════════════════════════ -->
+<div id="caesar" class="page">
+  <div class="tool-container">
+    <button class="back-btn" onclick="showPage('menu')">← Back to Menu</button>
+
+    <h1 class="tool-title">🔐 Caesar Cipher</h1>
+    <p class="tool-subtitle">Encrypt &amp; Decrypt messages with a shift key</p>
+
+    <div class="form-group">
+      <label for="cc-message">Message (Letters only):</label>
+      <input type="text" id="cc-message" placeholder="Enter your message here...">
+    </div>
+    <div class="form-group">
+      <label for="cc-shift">Shift Value (1–25):</label>
+      <input type="number" id="cc-shift" min="1" max="25" value="3">
+    </div>
+
+    <div class="button-group">
+      <button class="encrypt-btn" onclick="cc_encrypt()">Encrypt</button>
+      <button class="decrypt-btn" onclick="cc_decrypt()">Decrypt</button>
+      <button class="clear-btn"   onclick="cc_clear()">Clear</button>
+    </div>
+
+    <div class="result-section">
+      <div class="error-box" id="cc-error"></div>
+      <div class="result-box" id="cc-result-box">
+        <div class="result-label">Encrypted / Decrypted Result:</div>
+        <div class="result-text" id="cc-result"></div>
+        <div class="steps-section" id="cc-steps"></div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3>About Caesar Cipher</h3>
+      <p>The Caesar Cipher is one of the simplest encryption techniques. It shifts each letter by a fixed number of positions in the alphabet.</p>
+      <div class="example-block">
+        <strong>Example:</strong><br>
+        Message: "HELLO" &nbsp; Shift: 3<br>
+        Result: "KHOOR" &nbsp; (H→K, E→H, L→O, L→O, O→R)
+      </div>
+      <p style="margin-top:12px">If a letter goes past 'Z', it wraps around to the beginning of the alphabet.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MITM ATTACK
+═══════════════════════════════════════════ -->
+<div id="mitm" class="page">
+  <div class="tool-container">
+    <button class="back-btn" onclick="showPage('menu')">← Back to Menu</button>
+
+    <h1 class="tool-title">🕵️ MITM Attack Simulation</h1>
+    <p class="tool-subtitle">Diffie-Hellman key exchange — man-in-the-middle interception</p>
+
+    <div class="mitm-field"><label>Prime Number (q):</label><input type="number" id="dh-q"   value="19" min="2"></div>
+    <div class="mitm-field"><label>Alice Private Key (XA):</label><input type="number" id="dh-xa"  value="5"  min="1"></div>
+    <div class="mitm-field"><label>Bob Private Key (XB):</label><input type="number" id="dh-xb"  value="7"  min="1"></div>
+    <div class="mitm-field"><label>Attacker Key 1 (XE1):</label><input type="number" id="dh-xe1" value="3"  min="1"></div>
+    <div class="mitm-field"><label>Attacker Key 2 (XE2):</label><input type="number" id="dh-xe2" value="6"  min="1"></div>
+
+    <button class="simulate-btn" onclick="dh_simulate()">▶ Simulate Attack</button>
+
+    <div class="actor-strip">
+      <div class="actor-cell ac-alice">👩 Alice</div>
+      <div class="actor-cell ac-eve">🕵️ Eve</div>
+      <div class="actor-cell ac-bob">👨 Bob</div>
+    </div>
+    <p class="actor-flow">Alice → Eve → Bob</p>
+
+    <div class="error-box" id="dh-error" style="margin-top:12px"></div>
+
+    <div class="mitm-output" id="dh-output">
+      <div class="mitm-sec">Public Parameters</div>
+      <div class="mitm-row">
+        <div class="mr-main">Primitive Root: <span id="dh-g"></span></div>
+        <div class="mr-sub" id="dh-g-sub"></div>
+      </div>
+
+      <div class="mitm-sec">Legitimate Public Keys</div>
+      <div class="mitm-row">
+        <div class="mr-main">Alice Public Key: <span id="dh-ya"></span></div>
+        <div class="mr-sub" id="dh-ya-sub"></div>
+      </div>
+      <div class="mitm-row">
+        <div class="mr-main">Bob Public Key: <span id="dh-yb"></span></div>
+        <div class="mr-sub" id="dh-yb-sub"></div>
+      </div>
+
+      <div class="mitm-sec red">⚠ Eve Replaces Keys</div>
+      <div class="mitm-row danger">
+        <div class="mr-main">Fake Key to Alice: <span id="dh-yd1"></span></div>
+        <div class="mr-sub" id="dh-yd1-sub"></div>
+      </div>
+      <div class="mitm-row danger">
+        <div class="mr-main">Fake Key to Bob: <span id="dh-yd2"></span></div>
+        <div class="mr-sub" id="dh-yd2-sub"></div>
+      </div>
+
+      <div class="mitm-sec">Keys Computed by Alice &amp; Bob (deceived)</div>
+      <div class="mitm-row">
+        <div class="mr-main">Alice's Key: <span id="dh-ka"></span></div>
+        <div class="mr-sub" id="dh-ka-sub"></div>
+      </div>
+      <div class="mitm-row">
+        <div class="mr-main">Bob's Key: <span id="dh-kb"></span></div>
+        <div class="mr-sub" id="dh-kb-sub"></div>
+      </div>
+
+      <div class="mitm-sec red">Eve's Intercepted Keys</div>
+      <div class="mitm-key-cards">
+        <div class="mkc kc-alice">
+          <div class="mkc-title">Eve–Alice Key</div>
+          <div class="mkc-val" id="dh-kea"></div>
+          <div class="mkc-sub" id="dh-kea-sub"></div>
+        </div>
+        <div class="mkc kc-bob">
+          <div class="mkc-title">Eve–Bob Key</div>
+          <div class="mkc-val" id="dh-keb"></div>
+          <div class="mkc-sub" id="dh-keb-sub"></div>
+        </div>
+      </div>
+
+      <div class="mitm-alert">⚠ Message has been intercepted by Eve</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     RAIL FENCE CIPHER
+═══════════════════════════════════════════ -->
+<div id="rail" class="page">
+  <div class="tool-container">
+    <button class="back-btn" onclick="showPage('menu')">← Back to Menu</button>
+
+    <h1 class="tool-title">🚂 Rail Fence Cipher</h1>
+    <p class="tool-subtitle">Encrypt &amp; Decrypt with zigzag transposition</p>
+
+    <div class="form-group">
+      <label for="rf-message">Message (Letters only):</label>
+      <input type="text" id="rf-message" placeholder="Enter your message here...">
+    </div>
+    <div class="form-group">
+      <label for="rf-rails">Number of Rails (2–10):</label>
+      <input type="number" id="rf-rails" min="2" max="10" value="3">
+    </div>
+
+    <div class="button-group">
+      <button class="encrypt-btn" onclick="rf_encrypt()">Encrypt</button>
+      <button class="decrypt-btn" onclick="rf_decrypt()">Decrypt</button>
+      <button class="clear-btn"   onclick="rf_clear()">Clear</button>
+    </div>
+
+    <div class="result-section">
+      <div class="error-box" id="rf-error"></div>
+      <div class="result-box" id="rf-result-box">
+        <div class="result-label">Encrypted / Decrypted Result:</div>
+        <div class="result-text" id="rf-result"></div>
+        <div class="visualization-box">
+          <h3>Rail Pattern Visualization:</h3>
+          <pre class="rail-pattern" id="rf-visual"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3>About Rail Fence Cipher</h3>
+      <p>The Rail Fence Cipher writes the message in a zigzag pattern across a number of rails (rows), then reads off each row to produce the ciphertext.</p>
+      <div class="example-block">
+        <strong>Example (3 rails):</strong><br>
+        Message: "WEAREDISCOVEREDRUNATONCE"<br>
+        Rail 1: W . . . E . . . I . . . V . . . D . . . V . . .<br>
+        Rail 2: . E . R . D . S . O . E . E . R . N . A . O . C .<br>
+        Rail 3: . . A . . . I . . . C . . . . . U . . . T . . . E<br>
+        Result: "WECRLTEERDSOEEFEAABORADICVNE"
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+/* ── NAVIGATION ── */
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+/* ════════════════════════════════════════════
+   CAESAR CIPHER
+════════════════════════════════════════════ */
+function cc_getShift() {
+  const v = parseInt(document.getElementById('cc-shift').value);
+  if (isNaN(v) || v < 1 || v > 25) throw new Error('Shift value must be between 1 and 25');
+  return v;
+}
+
+function cc_process(text, shift, decrypt) {
+  if (!/^[a-zA-Z\s]*$/.test(text)) throw new Error('Only letters and spaces are allowed!');
+  if (text.trim() === '') throw new Error('Please enter a message!');
+
+  const s = decrypt ? -shift : shift;
+  let result = '', steps = [];
+
+  for (const ch of text) {
+    if (ch === ' ') { result += ' '; continue; }
+    const upper = ch === ch.toUpperCase();
+    const base  = upper ? 65 : 97;
+    const code  = ((ch.charCodeAt(0) - base + s + 2600) % 26);
+    const nc    = String.fromCharCode(code + base);
+    result += nc;
+    if (steps.length < 10) steps.push({ orig: ch, enc: nc });
+  }
+  return { result, steps };
+}
+
+function cc_show(result, steps, mode) {
+  document.getElementById('cc-error').classList.remove('show');
+  document.getElementById('cc-result').textContent = result;
+  document.getElementById('cc-result-box').classList.add('show');
+
+  let html = `<h3 style="color:#667eea;font-size:.88em;margin-bottom:9px">Step-by-step ${mode}:</h3><div class="steps-grid">`;
+  steps.forEach(s => {
+    html += `<div class="step-card">
+      <div class="s-orig">'${s.orig}'</div>
+      <div class="s-arrow">↓</div>
+      <div class="s-enc">'${s.enc}'</div>
+    </div>`;
+  });
+  html += '</div>';
+  if (steps.length >= 10) html += '<p style="margin-top:8px;font-size:.8em;color:#888">… and more</p>';
+  document.getElementById('cc-steps').innerHTML = html;
+}
+
+function cc_error(msg) {
+  const e = document.getElementById('cc-error');
+  e.textContent = msg; e.classList.add('show');
+  document.getElementById('cc-result-box').classList.remove('show');
+}
+
+function cc_encrypt() {
+  try { const { result, steps } = cc_process(document.getElementById('cc-message').value, cc_getShift(), false); cc_show(result, steps, 'Encryption'); }
+  catch(e) { cc_error(e.message); }
+}
+function cc_decrypt() {
+  try { const { result, steps } = cc_process(document.getElementById('cc-message').value, cc_getShift(), true); cc_show(result, steps, 'Decryption'); }
+  catch(e) { cc_error(e.message); }
+}
+function cc_clear() {
+  document.getElementById('cc-message').value = '';
+  document.getElementById('cc-shift').value = '3';
+  document.getElementById('cc-result-box').classList.remove('show');
+  document.getElementById('cc-error').classList.remove('show');
+}
+
+document.getElementById('cc-message').addEventListener('keypress', e => { if(e.key==='Enter') cc_encrypt(); });
+document.getElementById('cc-shift').addEventListener('keypress',   e => { if(e.key==='Enter') cc_encrypt(); });
+
+/* ════════════════════════════════════════════
+   MITM / DIFFIE-HELLMAN
+════════════════════════════════════════════ */
+function dh_modpow(base, exp, mod) {
+  base=BigInt(base); exp=BigInt(exp); mod=BigInt(mod);
+  let r=1n; base=base%mod;
+  while(exp>0n){ if(exp%2n===1n) r=r*base%mod; exp=exp/2n; base=base*base%mod; }
+  return r;
+}
+
+function dh_isPrime(n) {
+  if(n<2) return false; if(n<4) return true;
+  if(n%2===0||n%3===0) return false;
+  for(let i=5;i*i<=n;i+=6) if(n%i===0||n%(i+2)===0) return false;
+  return true;
+}
+
+function dh_primitiveRoot(q) {
+  const phi = q-1; const factors=[]; let n=phi;
+  for(let i=2;i*i<=n;i++){ if(n%i===0){ factors.push(i); while(n%i===0)n=Math.floor(n/i); } }
+  if(n>1) factors.push(n);
+  for(let g=2;g<q;g++){
+    let ok=true;
+    for(const f of factors) if(dh_modpow(g,phi/f,q)===1n){ ok=false; break; }
+    if(ok) return g;
+  }
+  return 2;
+}
+
+function dh_set(id,v)  { document.getElementById(id).textContent = v; }
+
+function dh_simulate() {
+  const errEl  = document.getElementById('dh-error');
+  const outEl  = document.getElementById('dh-output');
+  errEl.classList.remove('show'); outEl.classList.remove('show');
+
+  const q   = parseInt(document.getElementById('dh-q').value);
+  const xa  = parseInt(document.getElementById('dh-xa').value);
+  const xb  = parseInt(document.getElementById('dh-xb').value);
+  const xe1 = parseInt(document.getElementById('dh-xe1').value);
+  const xe2 = parseInt(document.getElementById('dh-xe2').value);
+
+  if(!dh_isPrime(q)){
+    errEl.textContent='⚠ q must be a prime number (e.g. 7, 11, 13, 17, 19, 23…)';
+    errEl.classList.add('show'); return;
+  }
+  if([xa,xb,xe1,xe2].some(v=>v<1||v>=q)){
+    errEl.textContent=`⚠ All private keys must be between 1 and q−1 (1…${q-1})`;
+    errEl.classList.add('show'); return;
+  }
+
+  const g = dh_primitiveRoot(q);
+  const Ya  = Number(dh_modpow(g, xa,  q));
+  const Yb  = Number(dh_modpow(g, xb,  q));
+  const Yd1 = Number(dh_modpow(g, xe1, q));
+  const Yd2 = Number(dh_modpow(g, xe2, q));
+
+  const Ka  = Number(dh_modpow(Yd2, xa,  q));
+  const Kb  = Number(dh_modpow(Yd1, xb,  q));
+  const Kea = Number(dh_modpow(Ya,  xe2, q));
+  const Keb = Number(dh_modpow(Yb,  xe1, q));
+
+  dh_set('dh-g',       g);
+  dh_set('dh-g-sub',   `g = primitive root of ${q}`);
+  dh_set('dh-ya',      Ya);
+  dh_set('dh-ya-sub',  `YA = ${g}^${xa} mod ${q}`);
+  dh_set('dh-yb',      Yb);
+  dh_set('dh-yb-sub',  `YB = ${g}^${xb} mod ${q}`);
+  dh_set('dh-yd1',     Yd1);
+  dh_set('dh-yd1-sub', `YD1 = ${g}^${xe1} mod ${q}`);
+  dh_set('dh-yd2',     Yd2);
+  dh_set('dh-yd2-sub', `YD2 = ${g}^${xe2} mod ${q}`);
+  dh_set('dh-ka',      Ka);
+  dh_set('dh-ka-sub',  `K = (${Yd2})^${xa} mod ${q}`);
+  dh_set('dh-kb',      Kb);
+  dh_set('dh-kb-sub',  `K = (${Yd1})^${xb} mod ${q}`);
+  dh_set('dh-kea',     Kea);
+  dh_set('dh-kea-sub', `(${Ya})^${xe2} mod ${q}`);
+  dh_set('dh-keb',     Keb);
+  dh_set('dh-keb-sub', `(${Yb})^${xe1} mod ${q}`);
+
+  outEl.classList.add('show');
+}
+
+/* ════════════════════════════════════════════
+   RAIL FENCE CIPHER
+════════════════════════════════════════════ */
+function rf_getRails() {
+  const v = parseInt(document.getElementById('rf-rails').value);
+  if(isNaN(v)||v<2||v>10) throw new Error('Number of rails must be between 2 and 10');
+  return v;
+}
+
+function rf_validate(text) {
+  if(!/^[a-zA-Z\s]*$/.test(text)) throw new Error('Only letters and spaces are allowed!');
+  if(text.trim()==='') throw new Error('Please enter a message!');
+}
+
+function rf_createPattern(text, rails) {
+  const fence = Array.from({length:rails}, ()=>[]);
+  let rail=0, dir=1;
+  const pattern=[];
+  for(const ch of text) {
+    fence[rail].push(ch); pattern.push(rail);
+    if(rail===0) dir=1;
+    else if(rail===rails-1) dir=-1;
+    rail+=dir;
+  }
+  return {fence, pattern};
+}
+
+function rf_encrypt(isBtn) {
+  try {
+    const text  = document.getElementById('rf-message').value;
+    const rails = rf_getRails();
+    rf_validate(text);
+    if(rails===1){ rf_showResult(text, [[...text]], Array(text.length).fill(0), text); return; }
+    const {fence, pattern} = rf_createPattern(text, rails);
+    const encrypted = fence.map(r=>r.join('')).join('');
+    rf_showResult(encrypted, fence, pattern, text);
+  } catch(e) { rf_error(e.message); }
+}
+
+function rf_decrypt(isBtn) {
+  try {
+    const text  = document.getElementById('rf-message').value;
+    const rails = rf_getRails();
+    rf_validate(text);
+    if(rails===1){ rf_showResult(text, [[...text]], Array(text.length).fill(0), text); return; }
+
+    const pattern=[];
+    let rail=0, dir=1;
+    for(let i=0;i<text.length;i++){
+      pattern.push(rail);
+      if(rail===0) dir=1; else if(rail===rails-1) dir=-1;
+      rail+=dir;
+    }
+    const railCounts=Array(rails).fill(0);
+    pattern.forEach(r=>railCounts[r]++);
+    const fence=Array.from({length:rails},()=>[]);
+    let idx=0;
+    for(let r=0;r<rails;r++) for(let i=0;i<railCounts[r];i++) fence[r].push(text[idx++]);
+
+    let decrypted=''; rail=0; dir=1;
+    const ri=Array(rails).fill(0);
+    for(let i=0;i<text.length;i++){
+      decrypted+=fence[rail][ri[rail]++];
+      if(rail===0) dir=1; else if(rail===rails-1) dir=-1;
+      rail+=dir;
+    }
+    rf_showResult(decrypted, fence, pattern, text);
+  } catch(e) { rf_error(e.message); }
+}
+
+function rf_visualize(text, rails, pattern, fence) {
+  const grid = Array.from({length:rails}, ()=>Array(text.length).fill('.'));
+  for(let i=0;i<text.length;i++) grid[pattern[i]][i] = text[i]||' ';
+
+  let v = 'Zigzag Pattern:\n===============\n\n';
+  for(let r=0;r<rails;r++){
+    v += `Rail ${r+1}: `;
+    for(let c=0;c<text.length;c++) v += grid[r][c]!=='.' ? grid[r][c]+' ' : '  ';
+    v+='\n';
+  }
+  v+='\nFence Reading (by rails):\n=========================\n';
+  for(let r=0;r<rails;r++) v+=`Rail ${r+1}: ${fence[r].join('')}\n`;
+  return v;
+}
+
+function rf_showResult(result, fence, pattern, text) {
+  document.getElementById('rf-error').classList.remove('show');
+  document.getElementById('rf-result').textContent = result;
+  document.getElementById('rf-result-box').classList.add('show');
+  document.getElementById('rf-visual').textContent = rf_visualize(text, fence.length, pattern, fence);
+}
+
+function rf_error(msg) {
+  const e=document.getElementById('rf-error');
+  e.textContent=msg; e.classList.add('show');
+  document.getElementById('rf-result-box').classList.remove('show');
+}
+
+function rf_clear() {
+  document.getElementById('rf-message').value='';
+  document.getElementById('rf-rails').value='3';
+  document.getElementById('rf-result-box').classList.remove('show');
+  document.getElementById('rf-error').classList.remove('show');
+}
+
+document.getElementById('rf-message').addEventListener('keypress', e=>{ if(e.key==='Enter') rf_encrypt(); });
+document.getElementById('rf-rails').addEventListener('keypress',   e=>{ if(e.key==='Enter') rf_encrypt(); });
+</script>
+</body>
+</html>
